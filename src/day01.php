@@ -25,13 +25,10 @@ function day01a( array $nums ) : int {
 
 function day01b( array $nums ) : int {
     $res = 0;
-    $sum = $nums[0] + $nums[1] + $nums[2];
     for ( $i = 3; $i < sizeof( $nums ); $i++ ) {
-        $newSum = $sum - $nums[$i - 3] + $nums[$i];
-        if ( $newSum > $sum ) {
+        if ( $nums[ $i - 3 ] < $nums[ $i ] ) {
             $res++;
         }
-        $sum = $newSum;
     }
     return $res;
 
