@@ -59,7 +59,7 @@ function simulateFaster( int $initFish, int $days, map $memoFish ) {
     return ( $res );
 }
 
-function day05( string $filename ) : void {
+function day06( string $filename ) : void {
     $strcontent = file_get_contents( $filename );
     $fishesStr = explode( ',',  $strcontent);
     $fishes = [];
@@ -72,4 +72,4 @@ function day05( string $filename ) : void {
     print ( $day06b . PHP_EOL);
 }
 
-day05( '../data/day06.txt');
+day06( '../data/day06.txt');
