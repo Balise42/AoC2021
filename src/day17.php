@@ -65,7 +65,7 @@ function day17b(int $xmin, int $xmax, int $ymin, int $ymax): int {
     return $hits;
 }
 
-function day16(string $filename): void
+function day17(string $filename): void
 {
     $strcontent = file_get_contents($filename);
 
@@ -84,4 +84,4 @@ function day16(string $filename): void
     print ($day17b . PHP_EOL);
 }
 
-day16('../data/day17.txt');
+day17('../data/day17.txt');
