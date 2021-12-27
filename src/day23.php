@@ -17,6 +17,11 @@ class Burrow {
     }
 
     public function isTidy() : bool {
+        foreach ( $this->corridor as $c ) {
+            if ( $c != -1 ) {
+                return false;
+            }
+        }
         foreach ( $this->rooms as $r => $room ) {
             foreach ( $room as $a ) {
                 if ( $r != $a ) {
@@ -30,10 +35,21 @@ class Burrow {
     public function __toString() : string {
         $str = '';
         foreach ( $this->corridor as $c ) {
-            $str .= $c;
+            if ( $c == -1 ) {
+                $str .= '.';
+            } else {
+                $str .= chr(ord($c) + (ord('A') - ord('0')));
+            }
         }
         foreach ( $this->rooms as $room ) {
-            $str .= $room[0] . $room[1];
+            $str .= '/';
+            foreach ( $room as $r ) {
+                if ($r == '-1') {
+                    $str .= ".";
+                } else {
+                    $str .= chr(ord($r) + (ord('A') - ord('0')));
+                }
+            }
         }
         return $str;
     }
@@ -44,6 +60,13 @@ function findPossibleNextStep( Burrow $burrow ) : array {
     for ( $i = -2; $i <= 8; $i++ ) {
         if ( $burrow->corridor[$i] !== -1 ) {
             $arth = $burrow->corridor[$i];
+            $validRoom = true;
+            foreach ( $burrow->rooms[$arth] as $r ) {
+                $validRoom = $validRoom && ($r == $arth || $r == -1);
+            }
+            if (!$validRoom) {
+                continue;
+            }
             $arthRoom = $arth * 2;
             $pathFree = true;
             if ( $arthRoom < $i ) {
@@ -58,58 +81,58 @@ function findPossibleNextStep( Burrow $burrow ) : array {
             if ( !$pathFree ) {
                 continue;
             }
-            if ( $burrow->rooms[$arth][0] == -1 ) {
-                $newBurrow = $burrow->copy();
-                $newBurrow->corridor[$i] = -1;
-                $newBurrow->rooms[$arth][0] = $arth;
-                $res[] = [$newBurrow, pow(10, $arth) * ( ($arthRoom > $i ? ($arthRoom-$i) : ($i - $arthRoom)) + 2)];
-            } else if ( $burrow->rooms[$arth][0] == $arth && $burrow->rooms[$arth][1] == -1) {
-                $newBurrow = $burrow->copy();
-                $newBurrow->corridor[$i] = -1;
-                $newBurrow->rooms[$arth][1] = $arth;
-                $res[] = [$newBurrow, pow(10, $arth) * ( ($arthRoom > $i ? ($arthRoom-$i) : ($i - $arthRoom)) + 1)];
+            for ( $j = 0; $j < count($burrow->rooms[$arth]); $j++ ) {
+                if ($burrow->rooms[$arth][$j] == -1) {
+                    $newBurrow = $burrow->copy();
+                    $newBurrow->corridor[$i] = -1;
+                    $newBurrow->rooms[$arth][$j] = $arth;
+                    $res[] = [$newBurrow, pow(10, $arth) * (($arthRoom > $i ? ($arthRoom - $i) : ($i - $arthRoom)) + count($burrow->rooms[$arth]) - $j)];
+                    break;
+                }
             }
         }
     }
 
     foreach ( $burrow->rooms as $r => $room ) {
-        if ( $room[0] == $r && $room[1] == $r ) {
+        $complete = true;
+        $hasArth = false;
+        for ( $i = 0; $i < count($room); $i++) {
+            $complete = $complete && $room[$i] == $r;
+            $hasArth = $hasArth || ( $room[$i] !== -1 );
+        }
+        if ( $complete ) {
             continue;
         }
-        if ( $room[1] != -1 || $room[0] != -1) {
+        if ( $hasArth ) {
             $acc = [];
-            for ( $i = -2; $i <= 8; $i++ ) {
-                if ( $i == 0 || $i == 2 || $i == 4 || $i == 6 ) {
+            for ($i = -2; $i <= 8; $i++) {
+                if ($i == 0 || $i == 2 || $i == 4 || $i == 6) {
                     continue;
                 }
                 $isAcc = true;
-                if ( $i <= 2* $r ) {
-                    for ( $j = 2*$r; $j >= $i; $j-- ) {
+                if ($i <= 2 * $r) {
+                    for ($j = 2 * $r; $j >= $i; $j--) {
                         $isAcc = $isAcc && $burrow->corridor[$j] == -1;
                     }
                 } else {
                     $isAcc = true;
-                    for ( $j = 2*$r; $j <= $i; $j++ ) {
+                    for ($j = 2 * $r; $j <= $i; $j++) {
                         $isAcc = $isAcc && $burrow->corridor[$j] == -1;
                     }
                 }
-                if ( $isAcc ) {
+                if ($isAcc) {
                     $acc[] = $i;
                 }
             }
-            if ( $room[1] != -1 ) {
-                foreach ( $acc as $dest ) {
-                    $newBurrow = $burrow->copy();
-                    $newBurrow->corridor[$dest] = $room[1];
-                    $newBurrow->rooms[$r][1] = -1;
-                    $res[] = [$newBurrow, pow(10, $room[1]) * ((($dest > $r*2) ? ($dest - $r * 2) : ($r*2 - $dest)) + 1)];
-                }
-            } else {
-                foreach ( $acc as $dest ) {
-                    $newBurrow = $burrow->copy();
-                    $newBurrow->corridor[$dest] = $room[0];
-                    $newBurrow->rooms[$r][0] = -1;
-                    $res[] = [$newBurrow, pow(10, $room[0]) * ((($dest > $r*2) ? ($dest - $r * 2) : ($r*2 - $dest)) + 2)];
+            for ($j = count($room) - 1; $j >= 0; $j--) {
+                if ($room[$j] != -1) {
+                    foreach ($acc as $dest) {
+                        $newBurrow = $burrow->copy();
+                        $newBurrow->corridor[$dest] = $room[$j];
+                        $newBurrow->rooms[$r][$j] = -1;
+                        $res[] = [$newBurrow, pow(10, $room[$j]) * ((($dest > $r * 2) ? ($dest - $r * 2) : ($r * 2 - $dest)) + count($room) - $j)];
+                    }
+                    break;
                 }
             }
         }
@@ -128,10 +151,10 @@ function day23() {
         [ 2, 3 ],
         [ 1, 2 ],
         [ 3, 0 ]*/
-        [0,1],
-        [3,2],
-        [2,1],
-        [0,3]
+        [2,3,3,0],
+        [2,1,2,3],
+        [3,0,1,0],
+        [1,2,0,1]
        /*[0, 1],
         [1, 0],
         [2, 2],
@@ -139,11 +162,14 @@ function day23() {
     ];
 
     $dist = [];
+    $prev = [];
 
     $queue = new SplPriorityQueue();
     $queue->insert( $burrow, 0 );
     $queue->setExtractFlags( SplPriorityQueue::EXTR_BOTH );
     $res = -1;
+    $dep = $burrow->__toString();
+
 
     while ( !$queue->isEmpty() ) {
         print $queue->count() . PHP_EOL;
@@ -153,6 +179,15 @@ function day23() {
         $prio = $curr['priority'];
 
         if ( $u->isTidy() ) {
+            $str = [];
+            $str[] = $u->__toString();
+            $p = $prev[$u->__toString()] ?? null;
+            while ( $p !== $dep ) {
+                $str[] = $p . ' ' . $dist[$p];
+                $p = $prev[$p] ?? null;
+            }
+            $str = array_reverse( $str );
+            print ( join(PHP_EOL, $str) . PHP_EOL );
             $res = -$prio;
             break;
         }
@@ -164,6 +199,7 @@ function day23() {
             if ( $prio - $n[1] > (isset($dist[$n[0]->__toString()]) ? $dist[$n[0]->__toString()] : PHP_INT_MIN )) {
                 $dist[$n[0]->__toString()] = $prio - $n[1];
                 $queue->insert($n[0], $prio - $n[1]);
+                $prev[$n[0]->__toString()] = $u->__toString();
             }
         }
     }
